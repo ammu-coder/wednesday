@@ -1,0 +1,133 @@
+package com.example.finalist.entity;
+import jakarta.persistence.*;
+
+@Entity
+public class Student {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    private String name;
+    private double percentage;
+
+    public Student() {}
+
+    public Student(String name, double percentage) {
+        this.name = name;
+        this.percentage = percentage;
+    }
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public double getPercentage() { return percentage; }
+    public void setPercentage(double percentage) { this.percentage = percentage; }
+}
+
+
+package com.example.finalist.controller;
+import com.example.finalist.entity.Student;
+import com.example.finalist.repository.StudentRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
+import java.util.Optional;
+import java.util.List;
+
+@RestController
+@CrossOrigin(origins = "http://localhost:3000")
+public class StudentController {
+
+    @Autowired
+    private StudentRepository studentRepository;
+
+    @PostMapping("/api/students")
+    public ResponseEntity<?> createStudent(@RequestBody Student student) {
+        if (student.getName() == null || student.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Name is required");
+        }
+        if (student.getPercentage() < 0 || student.getPercentage() > 100) {
+            return ResponseEntity.badRequest().body("Percentage must be between 0 and 100");
+        }
+        Student savedStudent = studentRepository.save(student);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedStudent);
+    }
+
+    @PostMapping("/api/auth/login")
+    public ResponseEntity<?> loginStudent(@RequestBody Student loginData) {
+        Optional<Student> student = studentRepository.findByNameAndPercentage(
+            loginData.getName(), loginData.getPercentage());
+
+        return student.map(ResponseEntity::ok)
+                      .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials"));
+    }
+
+    @GetMapping("/api/students")
+    public ResponseEntity<List<Student>> getAllStudents() {
+        return ResponseEntity.ok(studentRepository.findAll());
+    }
+
+    @GetMapping("/api/students/{id}")
+    public ResponseEntity<?> getStudentById(@PathVariable int id) {
+        return studentRepository.findById(id)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Student not found"));
+    }
+
+    @PutMapping("/api/students/{id}")
+    public ResponseEntity<?> updateStudent(@PathVariable int id, @RequestBody Student updatedData) {
+        if (updatedData.getName() == null || updatedData.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Name is required");
+        }
+        if (updatedData.getPercentage() < 0 || updatedData.getPercentage() > 100) {
+            return ResponseEntity.badRequest().body("Percentage must be between 0 and 100");
+        }
+
+        return studentRepository.findById(id).map(student -> {
+            student.setName(updatedData.getName());
+            student.setPercentage(updatedData.getPercentage());
+            studentRepository.save(student);
+            return ResponseEntity.ok(student);
+        }).orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Student not found"));
+    }
+
+    @DeleteMapping("/api/students/{id}")
+    public ResponseEntity<?> deleteStudent(@PathVariable int id) {
+        if (studentRepository.existsById(id)) {
+            studentRepository.deleteById(id);
+            return ResponseEntity.ok("Student deleted successfully");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Student not found");
+        }
+    }
+
+    @GetMapping("/api/students/search")
+    public ResponseEntity<List<Student>> searchByName(@RequestParam String name) {
+        return ResponseEntity.ok(studentRepository.findByNameContainingIgnoreCase(name));
+    }
+}
+
+
+package com.example.finalist.repository;
+import com.example.finalist.entity.Student;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
+import java.util.List;
+
+public interface StudentRepository extends JpaRepository<Student, Integer> {
+    Optional<Student> findByNameAndPercentage(String name, double percentage);
+    List<Student> findByNameContainingIgnoreCase(String name); // Optional search
+}
+
+
+spring.application.name=finalist
+server.port=3037
+spring.datasource.url=jdbc:mysql://localhost:3306/student
+spring.datasource.username=root
+spring.datasource.password=Root
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
