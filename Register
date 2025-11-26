@@ -1,0 +1,39 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Register Page</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f4f4f4; }
+    .container { width:300px; margin:50px auto; padding:20px; border:1px solid #ccc; border-radius:8px; background:#fff; }
+    input, button { width:100%; padding:8px; margin:8px 0; }
+    h2 { text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Register</h2>
+    <form onsubmit="handleRegister(event)">
+      <input type="text" id="username" placeholder="Username" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+      <button type="submit">Register</button>
+    </form>
+  </div>
+  <script>
+    function handleRegister(e) {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+      if (password !== confirmPassword) {
+        alert("Passwords do not match!");
+        return;
+      }
+      localStorage.setItem("regUsername", username);
+      localStorage.setItem("regPassword", password);
+      alert("Registration successful!");
+      
+    }
+  </script>
+</body>
+</html>
